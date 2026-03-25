@@ -1,5 +1,5 @@
 // src/pages/employee/TransactionReportsPage.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import PageLayout from '../../components/layout/PageLayout';
 import { employeeAPI, Transaction, User } from '../../services/api';
 
@@ -11,18 +11,18 @@ const TransactionReportsPage = () => {
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    loadTransactions();
-    employeeAPI.getAllCustomers().then(r => setCustomers(r.data.data || [])).catch(() => {});
-  }, [page]);
-
-  const loadTransactions = async () => {
+  const loadTransactions = useCallback(async () => {
     setLoading(true);
     try {
       const res = await employeeAPI.getAllTransactions(page, 50);
       setTransactions(res.data.data || []);
     } catch {} finally { setLoading(false); }
-  };
+  }, [page]);
+
+  useEffect(() => {
+    loadTransactions();
+    employeeAPI.getAllCustomers().then(r => setCustomers(r.data.data || [])).catch(() => {});
+  }, [page, loadTransactions]);
 
   const txIcons: any = { DEPOSIT: '⬇️', WITHDRAWAL: '⬆️', TRANSFER: '↔️', LOAN_DISBURSEMENT: '🏦' };
   const txColors: any = { DEPOSIT: 'var(--success)', WITHDRAWAL: 'var(--danger)', TRANSFER: 'var(--primary)', LOAN_DISBURSEMENT: 'var(--info)' };

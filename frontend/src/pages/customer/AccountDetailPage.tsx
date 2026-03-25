@@ -1,5 +1,5 @@
 // src/pages/customer/AccountDetailPage.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import PageLayout from '../../components/layout/PageLayout';
 import { accountAPI, transactionAPI, Account, Transaction } from '../../services/api';
@@ -11,16 +11,7 @@ const AccountDetailPage = () => {
   const [filter, setFilter] = useState<'LAST_10' | 'LAST_MONTH' | 'DATE_RANGE'>('LAST_10');
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
 
-  useEffect(() => {
-    if (accountNumber) {
-      accountAPI.getAccountDetails(accountNumber).then(r => setAccount(r.data.data)).catch(() => {});
-      loadTx();
-    }
-  }, [accountNumber]);
-
-  useEffect(() => { if (accountNumber) loadTx(); }, [filter]);
-
-  const loadTx = async () => {
+  const loadTx = useCallback(async () => {
     if (!accountNumber) return;
     try {
       let res;
@@ -30,7 +21,16 @@ const AccountDetailPage = () => {
         res = await transactionAPI.getByDateRange(accountNumber, dateRange.start + 'T00:00:00', dateRange.end + 'T23:59:59');
       if (res) setTransactions(res.data.data || []);
     } catch {}
-  };
+  }, [accountNumber, filter, dateRange.start, dateRange.end]);
+
+  useEffect(() => {
+    if (accountNumber) {
+      accountAPI.getAccountDetails(accountNumber).then(r => setAccount(r.data.data)).catch(() => {});
+      loadTx();
+    }
+  }, [accountNumber, loadTx]);
+
+  useEffect(() => { if (accountNumber) loadTx(); }, [accountNumber, filter, loadTx]);
 
   if (!account) return <PageLayout title="Account Details"><div>Loading...</div></PageLayout>;
 

@@ -1,5 +1,5 @@
 // src/pages/customer/TransactionsPage.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import PageLayout from '../../components/layout/PageLayout';
 import { accountAPI, transactionAPI, beneficiaryAPI, Account, Transaction, Beneficiary } from '../../services/api';
 import { toast } from 'react-toastify';
@@ -24,9 +24,7 @@ const TransactionsPage = () => {
     beneficiaryAPI.getAll().then(r => setBeneficiaries(r.data.data || [])).catch(() => {});
   }, []);
 
-  useEffect(() => { if (selectedAccount) loadTransactions(); }, [selectedAccount, filter]);
-
-  const loadTransactions = async () => {
+  const loadTransactions = useCallback(async () => {
     if (!selectedAccount) return;
     try {
       let res;
@@ -36,7 +34,9 @@ const TransactionsPage = () => {
         res = await transactionAPI.getByDateRange(selectedAccount, dateRange.start + 'T00:00:00', dateRange.end + 'T23:59:59');
       if (res) setTransactions(res.data.data || []);
     } catch {}
-  };
+  }, [selectedAccount, filter, dateRange.start, dateRange.end]);
+
+  useEffect(() => { if (selectedAccount) loadTransactions(); }, [selectedAccount, filter, loadTransactions]);
 
   const handleTransaction = async (e: React.FormEvent) => {
     e.preventDefault();

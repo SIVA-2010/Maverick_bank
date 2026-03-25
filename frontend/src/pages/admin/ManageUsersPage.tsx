@@ -1,5 +1,5 @@
 // src/pages/admin/ManageUsersPage.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import PageLayout from '../../components/layout/PageLayout';
 import { adminAPI, User } from '../../services/api';
 import { toast } from 'react-toastify';
@@ -13,14 +13,14 @@ const ManageUsersPage = () => {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
 
-  useEffect(() => { loadUsers(); }, [tab]);
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       const res = tab === 'employees' ? await adminAPI.getEmployees() : await adminAPI.getCustomers();
       setUsers(res.data.data || []);
     } catch {}
-  };
+  }, [tab]);
+
+  useEffect(() => { loadUsers(); }, [loadUsers]);
 
   const validateEmpForm = () => {
     const e: any = {};

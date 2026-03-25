@@ -22,7 +22,7 @@ const adminLinks = [
 ];
 
 const Sidebar = () => {
-  const { user, logout, isCustomer, isEmployee, isAdmin } = useAuth();
+  const { user, logout, isCustomer, isAdmin } = useAuth();
   const navigate = useNavigate();
   const links = isCustomer ? customerLinks : isAdmin ? adminLinks : employeeLinks;
 
