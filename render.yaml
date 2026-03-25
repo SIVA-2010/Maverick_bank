@@ -2,8 +2,8 @@ services:
   # MySQL Database (Private Service)
   - type: pserv
     name: maverick-db
-    runtime: image
-    image: mysql:8.0
+    env: docker
+    dockerfilePath: infrastructure/mysql/Dockerfile
     plan: free
     envVars:
       - key: MYSQL_ROOT_PASSWORD
