@@ -1,8 +1,8 @@
 services:
   # MySQL Database (Private Service)
-  - type: pvt
+  - type: pserv
     name: maverick-db
-    env: image
+    runtime: image
     image: mysql:8.0
     plan: free
     envVars:
