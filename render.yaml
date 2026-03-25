@@ -1,9 +1,9 @@
 services:
-  # MySQL Database Docker Service
-  - type: worker
+  # MySQL Database (Private Service)
+  - type: pvt
     name: maverick-db
+    env: image
     image: mysql:8.0
-    env: docker
     plan: free
     envVars:
       - key: MYSQL_ROOT_PASSWORD
