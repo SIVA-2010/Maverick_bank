@@ -1,10 +1,19 @@
 services:
-  # MySQL Database
-  - type: database
+  # MySQL Database Docker Service
+  - type: worker
     name: maverick-db
-    databaseName: maverick_bank
-    user: maverick_admin
-    plan: free # Change to 'starter' if free tier is unavailable
+    image: mysql:8.0
+    env: docker
+    plan: free
+    envVars:
+      - key: MYSQL_ROOT_PASSWORD
+        value: Siva@12345
+      - key: MYSQL_DATABASE
+        value: maverick_bank
+    disk:
+      name: mysql-data
+      mountPath: /var/lib/mysql
+      sizeGB: 1
 
   # Spring Boot Backend
   - type: web
@@ -14,17 +23,11 @@ services:
     plan: free
     envVars:
       - key: DB_URL
-        fromDatabase:
-          name: maverick-db
-          property: connectionString
+        value: jdbc:mysql://maverick-db:3306/maverick_bank?useSSL=false
       - key: DB_USERNAME
-        fromDatabase:
-          name: maverick-db
-          property: user
+        value: root
       - key: DB_PASSWORD
-        fromDatabase:
-          name: maverick-db
-          property: password
+        value: Siva@12345
       - key: JWT_SECRET
         generateValue: true
       - key: CORS_ORIGINS
