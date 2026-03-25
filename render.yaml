@@ -10,10 +10,6 @@ services:
         value: Siva@12345
       - key: MYSQL_DATABASE
         value: maverick_bank
-    disk:
-      name: mysql-data
-      mountPath: /var/lib/mysql
-      sizeGB: 1
 
   # Spring Boot Backend
   - type: web
