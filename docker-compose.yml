@@ -1,0 +1,82 @@
+version: '3.9'
+
+services:
+  # ─── MySQL Database ────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: maverick-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-MaverickRoot@2024}
+      MYSQL_DATABASE: maverick_bank
+      MYSQL_USER: ${MYSQL_USER:-maverickuser}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-Maverick@2024}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./infrastructure/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-MaverickRoot@2024}"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    networks:
+      - maverick-network
+
+  # ─── Spring Boot Backend ───────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: maverick-backend
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/maverick_bank?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      DB_USERNAME: ${MYSQL_USER:-maverickuser}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-Maverick@2024}
+      JWT_SECRET: ${JWT_SECRET:-MaverickBankSecretKey2024MaverickBankSecretKey2024MaverickBankSecretKey}
+      JWT_EXPIRATION: 86400000
+      CORS_ORIGINS: http://localhost:3000,http://localhost:80
+      LOG_PATH: /var/log/maverick-bank
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - backend_logs:/var/log/maverick-bank
+    networks:
+      - maverick-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ─── React Frontend ────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: http://localhost:8080/api/v1
+    container_name: maverick-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - maverick-network
+
+volumes:
+  mysql_data:
+  backend_logs:
+
+networks:
+  maverick-network:
+    driver: bridge

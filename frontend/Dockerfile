@@ -1,0 +1,18 @@
+# ─── Stage 1: Build React App ─────────────────────────────
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --silent
+COPY . .
+ARG REACT_APP_API_URL=http://localhost:8080/api/v1
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+RUN npm run build
+
+# ─── Stage 2: Serve with Nginx ────────────────────────────
+FROM nginx:1.25-alpine
+COPY --from=builder /app/build /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD wget -qO- http://localhost:80/ || exit 1
+CMD ["nginx", "-g", "daemon off;"]

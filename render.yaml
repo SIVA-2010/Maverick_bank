@@ -1,0 +1,31 @@
+services:
+  # MySQL Database
+  - type: database
+    name: maverick-db
+    databaseName: maverick_bank
+    user: maverick_admin
+    plan: free # Change to 'starter' if free tier is unavailable
+
+  # Spring Boot Backend
+  - type: web
+    name: maverick-backend
+    env: docker
+    dockerfilePath: backend/Dockerfile
+    plan: free
+    envVars:
+      - key: DB_URL
+        fromDatabase:
+          name: maverick-db
+          property: connectionString
+      - key: DB_USERNAME
+        fromDatabase:
+          name: maverick-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: maverick-db
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: https://maverick-bank-frontend.vercel.app # Update this after Vercel deployment

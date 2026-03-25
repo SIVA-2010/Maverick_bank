@@ -1,0 +1,89 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: ap-south-1
+    ECR_REPO_BACKEND: maverick-bank-backend
+    ECR_REPO_FRONTEND: maverick-bank-frontend
+  parameter-store:
+    DB_PASSWORD: /maverick-bank/db-password
+    JWT_SECRET: /maverick-bank/jwt-secret
+    EC2_INSTANCE_ID: /maverick-bank/ec2-instance-id
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto17
+      nodejs: 18
+    commands:
+      - echo "Installing dependencies..."
+      - java -version
+      - node -v && npm -v
+
+  pre_build:
+    commands:
+      - echo "Logging in to Amazon ECR..."
+      - AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - ECR_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_URI
+      - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - echo "Image tag - $IMAGE_TAG"
+
+  build:
+    commands:
+      - echo "=== Running Backend Tests ==="
+      - cd backend
+      - mvn test -B 2>&1 | tee test-output.txt
+      - echo "=== Building Backend ==="
+      - mvn clean package -DskipTests -B
+      - echo "=== Building Backend Docker Image ==="
+      - docker build -t $ECR_REPO_BACKEND:$IMAGE_TAG .
+      - docker tag $ECR_REPO_BACKEND:$IMAGE_TAG $ECR_URI/$ECR_REPO_BACKEND:$IMAGE_TAG
+      - docker tag $ECR_REPO_BACKEND:$IMAGE_TAG $ECR_URI/$ECR_REPO_BACKEND:latest
+      - cd ../frontend
+      - echo "=== Installing Frontend Dependencies ==="
+      - npm ci
+      - echo "=== Building Frontend ==="
+      - CI=false npm run build
+      - echo "=== Building Frontend Docker Image ==="
+      - docker build -t $ECR_REPO_FRONTEND:$IMAGE_TAG .
+      - docker tag $ECR_REPO_FRONTEND:$IMAGE_TAG $ECR_URI/$ECR_REPO_FRONTEND:$IMAGE_TAG
+      - docker tag $ECR_REPO_FRONTEND:$IMAGE_TAG $ECR_URI/$ECR_REPO_FRONTEND:latest
+
+  post_build:
+    commands:
+      - echo "=== Pushing images to ECR ==="
+      - docker push $ECR_URI/$ECR_REPO_BACKEND:$IMAGE_TAG
+      - docker push $ECR_URI/$ECR_REPO_BACKEND:latest
+      - docker push $ECR_URI/$ECR_REPO_FRONTEND:$IMAGE_TAG
+      - docker push $ECR_URI/$ECR_REPO_FRONTEND:latest
+      - echo "=== Deploying to EC2 via SSM ==="
+      - |
+        aws ssm send-command \
+          --instance-ids "$EC2_INSTANCE_ID" \
+          --document-name "AWS-RunShellScript" \
+          --comment "Deploy Maverick Bank" \
+          --parameters commands=[
+            "aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_URI",
+            "docker pull $ECR_URI/$ECR_REPO_BACKEND:latest",
+            "docker pull $ECR_URI/$ECR_REPO_FRONTEND:latest",
+            "docker stop maverick-backend maverick-frontend || true",
+            "docker rm maverick-backend maverick-frontend || true",
+            "docker run -d --name maverick-backend -p 8080:8080 --restart unless-stopped -e DB_URL=$$DB_URL -e DB_USERNAME=$$DB_USERNAME -e DB_PASSWORD=$DB_PASSWORD -e JWT_SECRET=$JWT_SECRET $ECR_URI/$ECR_REPO_BACKEND:latest",
+            "docker run -d --name maverick-frontend -p 80:80 --restart unless-stopped $ECR_URI/$ECR_REPO_FRONTEND:latest",
+            "docker system prune -f"
+          ] \
+          --region $AWS_DEFAULT_REGION
+      - echo "=== Deployment complete! ==="
+
+reports:
+  backend-test-report:
+    files:
+      - backend/target/surefire-reports/**/*.xml
+    file-format: JUNITXML
+
+artifacts:
+  files:
+    - backend/target/*.jar
+    - frontend/build/**/*
+  discard-paths: no
