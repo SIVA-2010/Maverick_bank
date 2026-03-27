@@ -67,16 +67,16 @@ phases:
           --document-name "AWS-RunShellScript" \
           --comment "Deploy Maverick Bank" \
           --region $AWS_DEFAULT_REGION \
-          --parameters "commands=[
+          --parameters "{\"commands\":[
             \"aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_URI\",
             \"docker pull $ECR_URI/$ECR_REPO_BACKEND:latest\",
             \"docker pull $ECR_URI/$ECR_REPO_FRONTEND:latest\",
             \"docker stop maverick-backend maverick-frontend || true\",
             \"docker rm maverick-backend maverick-frontend || true\",
-            \"docker run -d --name maverick-backend -p 8080:8080 --restart unless-stopped -e DB_URL=\\\$DB_URL -e DB_USERNAME=\\\$DB_USERNAME -e DB_PASSWORD=$DB_PASSWORD -e JWT_SECRET=$JWT_SECRET $ECR_URI/$ECR_REPO_BACKEND:latest\",
+            \"docker run -d --name maverick-backend -p 8080:8080 --restart unless-stopped -e DB_URL=\$DB_URL -e DB_USERNAME=\$DB_USERNAME -e DB_PASSWORD=$DB_PASSWORD -e JWT_SECRET=$JWT_SECRET $ECR_URI/$ECR_REPO_BACKEND:latest\",
             \"docker run -d --name maverick-frontend -p 80:80 --restart unless-stopped $ECR_URI/$ECR_REPO_FRONTEND:latest\",
             \"docker system prune -f\"
-          ]"
+          ]}"
       - echo "=== Deployment complete! ==="
 
 reports:
