@@ -61,21 +61,7 @@ phases:
       - docker push $ECR_URI/$ECR_REPO_FRONTEND:$IMAGE_TAG
       - docker push $ECR_URI/$ECR_REPO_FRONTEND:latest
       - echo "=== Deploying to EC2 via SSM ==="
-      - |
-        cat <<EOF > parameters.json
-        {
-          "commands": [
-            "aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_URI",
-            "docker pull $ECR_URI/$ECR_REPO_BACKEND:latest",
-            "docker pull $ECR_URI/$ECR_REPO_FRONTEND:latest",
-            "docker stop maverick-backend maverick-frontend || true",
-            "docker rm maverick-backend maverick-frontend || true",
-            "docker run -d --name maverick-backend -p 8080:8080 --restart unless-stopped -e DB_URL=\$DB_URL -e DB_USERNAME=\$DB_USERNAME -e DB_PASSWORD=$DB_PASSWORD -e JWT_SECRET=$JWT_SECRET $ECR_URI/$ECR_REPO_BACKEND:latest",
-            "docker run -d --name maverick-frontend -p 80:80 --restart unless-stopped $ECR_URI/$ECR_REPO_FRONTEND:latest",
-            "docker system prune -f"
-          ]
-        }
-        EOF
+      - printf '{"commands":["aws ecr get-login-password --region %%s | docker login --username AWS --password-stdin %%s","docker pull %%s/%%s:latest","docker pull %%s/%%s:latest","docker stop maverick-backend maverick-frontend || true","docker rm maverick-backend maverick-frontend || true","docker run -d --name maverick-backend -p 8080:8080 --restart unless-stopped -e DB_PASSWORD=%%s -e JWT_SECRET=%%s %%s/%%s:latest","docker run -d --name maverick-frontend -p 80:80 --restart unless-stopped %%s/%%s:latest","docker system prune -f"]}' "$AWS_DEFAULT_REGION" "$ECR_URI" "$ECR_URI" "$ECR_REPO_BACKEND" "$ECR_URI" "$ECR_REPO_FRONTEND" "$DB_PASSWORD" "$JWT_SECRET" "$ECR_URI" "$ECR_REPO_BACKEND" "$ECR_URI" "$ECR_REPO_FRONTEND" > parameters.json
       - aws ssm send-command --instance-ids "$EC2_INSTANCE_ID" --document-name "AWS-RunShellScript" --comment "Deploy Maverick Bank" --region $AWS_DEFAULT_REGION --parameters file://parameters.json
       - echo "=== Deployment complete! ==="
 
