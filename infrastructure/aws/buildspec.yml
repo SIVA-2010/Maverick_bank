@@ -60,8 +60,13 @@ phases:
       - docker push $ECR_URI/$ECR_REPO_BACKEND:latest
       - docker push $ECR_URI/$ECR_REPO_FRONTEND:$IMAGE_TAG
       - docker push $ECR_URI/$ECR_REPO_FRONTEND:latest
+      - echo "Checking Deployment Variables..."
+      - echo "Instance ID - $EC2_INSTANCE_ID"
+      - echo "Region - $AWS_DEFAULT_REGION"
       - echo "=== Deploying to EC2 via SSM ==="
       - printf '{"commands":["aws ecr get-login-password --region %%s | docker login --username AWS --password-stdin %%s","docker pull %%s/%%s:latest","docker pull %%s/%%s:latest","docker stop maverick-backend maverick-frontend || true","docker rm maverick-backend maverick-frontend || true","docker run -d --name maverick-backend -p 8080:8080 --restart unless-stopped -e DB_PASSWORD=%%s -e JWT_SECRET=%%s %%s/%%s:latest","docker run -d --name maverick-frontend -p 80:80 --restart unless-stopped %%s/%%s:latest","docker system prune -f"]}' "$AWS_DEFAULT_REGION" "$ECR_URI" "$ECR_URI" "$ECR_REPO_BACKEND" "$ECR_URI" "$ECR_REPO_FRONTEND" "$DB_PASSWORD" "$JWT_SECRET" "$ECR_URI" "$ECR_REPO_BACKEND" "$ECR_URI" "$ECR_REPO_FRONTEND" > parameters.json
+      - echo "Validating parameters.json content..."
+      - cat parameters.json
       - aws ssm send-command --instance-ids "$EC2_INSTANCE_ID" --document-name "AWS-RunShellScript" --comment "Deploy Maverick Bank" --region $AWS_DEFAULT_REGION --parameters file://parameters.json
       - echo "=== Deployment complete! ==="
 
