@@ -2,7 +2,7 @@ version: 0.2
 
 env:
   variables:
-    AWS_DEFAULT_REGION: ap-south-1
+    AWS_DEFAULT_REGION: us-east-1
     ECR_REPO_BACKEND: maverick-bank-backend
     ECR_REPO_FRONTEND: maverick-bank-frontend
   parameter-store:
