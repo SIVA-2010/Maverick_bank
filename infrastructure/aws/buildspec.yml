@@ -31,11 +31,14 @@ phases:
 
   build:
     commands:
-      - echo "=== Running Backend Tests ==="
+      - echo "=== Running Backend Tests with Coverage ==="
       - cd backend
-      - mvn test -B 2>&1 | tee test-output.txt
+      - mvn clean test jacoco:report -B 2>&1 | tee test-output.txt
+      - echo "=== Running SonarQube Analysis ==="
+      # Note: Requires SONAR_TOKEN and SONAR_HOST_URL to be set in environment or parameter store
+      - mvn sonar:sonar -Dsonar.login=$SONAR_TOKEN -B || echo "SonarQube scan failed (check SONAR_TOKEN)"
       - echo "=== Building Backend ==="
-      - mvn clean package -DskipTests -B
+      - mvn package -DskipTests -B
       - echo "=== Building Backend Docker Image ==="
       - docker build -t $ECR_REPO_BACKEND:$IMAGE_TAG .
       - docker tag $ECR_REPO_BACKEND:$IMAGE_TAG $ECR_URI/$ECR_REPO_BACKEND:$IMAGE_TAG

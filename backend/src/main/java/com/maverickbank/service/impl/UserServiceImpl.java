@@ -106,7 +106,8 @@ public class UserServiceImpl {
 
     public UserResponse mapToResponse(User user) {
         int age = user.getDateOfBirth() != null
-                ? Period.between(user.getDateOfBirth(), LocalDate.now()).getYears() : 0;
+                ? Period.between(user.getDateOfBirth(), LocalDate.now()).getYears()
+                : 0;
         return UserResponse.builder()
                 .id(user.getId())
                 .firstName(user.getFirstName())

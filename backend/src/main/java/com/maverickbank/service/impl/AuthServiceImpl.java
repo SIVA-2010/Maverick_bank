@@ -86,7 +86,8 @@ public class AuthServiceImpl {
 
     private AuthResponse buildAuthResponse(User user, String token, String refreshToken) {
         int age = user.getDateOfBirth() != null
-                ? Period.between(user.getDateOfBirth(), LocalDate.now()).getYears() : 0;
+                ? Period.between(user.getDateOfBirth(), LocalDate.now()).getYears()
+                : 0;
 
         UserResponse userResponse = UserResponse.builder()
                 .id(user.getId())
