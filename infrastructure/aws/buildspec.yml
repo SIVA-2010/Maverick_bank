@@ -72,7 +72,11 @@ phases:
             "docker network create maverick-net || true",
             "docker stop maverick-backend maverick-frontend || true",
             "docker rm maverick-backend maverick-frontend || true",
-            "docker run -d --name maverick-backend --network maverick-net --network-alias backend -p 8080:8080 --restart unless-stopped -e DB_URL=\"$DB_URL\" -e DB_USERNAME=\"$DB_USERNAME\" -e DB_PASSWORD=\"$DB_PASSWORD\" -e JWT_SECRET=\"$JWT_SECRET\" $ECR_URI/$ECR_REPO_BACKEND:latest",
+            "export DB_URL=\$(aws ssm get-parameter --name \"/maverick-bank/db-url\" --query \"Parameter.Value\" --output text --region $AWS_DEFAULT_REGION)",
+            "export DB_USERNAME=\$(aws ssm get-parameter --name \"/maverick-bank/db-username\" --query \"Parameter.Value\" --output text --region $AWS_DEFAULT_REGION)",
+            "export DB_PASSWORD=\$(aws ssm get-parameter --name \"/maverick-bank/db-password\" --with-decryption --query \"Parameter.Value\" --output text --region $AWS_DEFAULT_REGION)",
+            "export JWT_SECRET=\$(aws ssm get-parameter --name \"/maverick-bank/jwt-secret\" --with-decryption --query \"Parameter.Value\" --output text --region $AWS_DEFAULT_REGION)",
+            "docker run -d --name maverick-backend --network maverick-net --network-alias backend -p 8080:8080 --restart unless-stopped -e DB_URL=\"\$DB_URL\" -e DB_USERNAME=\"\$DB_USERNAME\" -e DB_PASSWORD=\"\$DB_PASSWORD\" -e JWT_SECRET=\"\$JWT_SECRET\" $ECR_URI/$ECR_REPO_BACKEND:latest",
             "docker run -d --name maverick-frontend --network maverick-net -p 80:80 --restart unless-stopped $ECR_URI/$ECR_REPO_FRONTEND:latest",
             "docker system prune -f"
           ]
