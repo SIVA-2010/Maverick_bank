@@ -60,6 +60,9 @@ phases:
       - docker push $ECR_URI/$ECR_REPO_BACKEND:latest
       - docker push $ECR_URI/$ECR_REPO_FRONTEND:$IMAGE_TAG
       - docker push $ECR_URI/$ECR_REPO_FRONTEND:latest
+      - echo "Checking SSM Parameters (Debug)..."
+      - if [ -z "$DB_URL" ]; then echo "ERROR: DB_URL is EMPTY!"; else echo "DB_URL is set (matches parameter store)"; fi
+      - if [ -z "$DB_USERNAME" ]; then echo "ERROR: DB_USERNAME is EMPTY!"; else echo "DB_USERNAME is set"; fi
       - |
         cat <<EOF > parameters.json
         {
