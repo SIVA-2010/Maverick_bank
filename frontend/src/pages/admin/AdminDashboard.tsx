@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import PageLayout from '../../components/layout/PageLayout';
 import { adminAPI, User } from '../../services/api';
+import { Link } from 'react-router-dom';
 
 const AdminDashboard = () => {
   const [employees, setEmployees] = useState<User[]>([]);
@@ -27,7 +28,7 @@ const AdminDashboard = () => {
         <div className="card">
           <div className="card-header">
             <h2 className="card-title">Recent Employees</h2>
-            <a href="/admin/users" className="btn btn-sm btn-outline">Manage All</a>
+            <Link to="/admin/users" className="btn btn-sm btn-outline">Manage All</Link>
           </div>
           {employees.slice(0, 5).map(e => (
             <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>

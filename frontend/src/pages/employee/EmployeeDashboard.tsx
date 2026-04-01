@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import PageLayout from '../../components/layout/PageLayout';
 import { employeeAPI } from '../../services/api';
+import { Link } from 'react-router-dom';
 
 const EmployeeDashboard = () => {
   const [stats, setStats] = useState({ pendingAccounts: 0, closeRequests: 0, pendingLoans: 0, customers: 0 });
@@ -33,9 +34,9 @@ const EmployeeDashboard = () => {
       <div className="card">
         <h2 className="card-title" style={{ marginBottom: 16 }}>Quick Actions</h2>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <a href="/employee/accounts" className="btn btn-primary">✅ Review Account Requests</a>
-          <a href="/employee/loans" className="btn btn-accent">💰 Review Loan Applications</a>
-          <a href="/employee/transactions" className="btn btn-outline">📊 View Transactions</a>
+          <Link to="/employee/accounts" className="btn btn-primary">✅ Review Account Requests</Link>
+          <Link to="/employee/loans" className="btn btn-accent">💰 Review Loan Applications</Link>
+          <Link to="/employee/transactions" className="btn btn-outline">📊 View Transactions</Link>
         </div>
       </div>
     </PageLayout>
